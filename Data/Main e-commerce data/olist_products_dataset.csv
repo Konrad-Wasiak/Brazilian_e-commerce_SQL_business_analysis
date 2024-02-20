@@ -1,4 +1,4 @@
-"id,""category_name"",""photos_qty"",""weight_g"",""length_cm"",""height_cm"",""width_cm"
+"id"",""category_name"",""photos_qty"",""weight_g"",""length_cm"",""height_cm"",""width_cm"
 1e9e8ef04dbcff4541ed26657ea517e5,perfumaria,40,287,1,225,16,10,14
 3aa071139cb16b67ca9e5dea641aaa2f,artes,44,276,1,1000,30,18,20
 96bd76ec8810374ed1b65e291975717f,esporte_lazer,46,250,1,154,18,9,15
