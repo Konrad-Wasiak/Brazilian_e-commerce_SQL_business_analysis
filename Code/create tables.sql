@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS geolocation_original (
 	zip_code_prefix CHAR(5) NOT NULL,
 	lat SMALLINT UNIQUE NOT NULL,
 	lng SMALLINT UNIQUE NOT NULL,
-	city VARCHAR(50),
+	city VARCHAR(50) NOT NULL,
 	state CHAR(2),
 	
 	CONSTRAINT geolocation_pk
@@ -29,11 +29,12 @@ COPY geolocation_original FROM
 CREATE TABLE IF NOT EXISTS geolocation AS
 	SELECT DISTINCT zip_code_prefix, city, state
 		FROM geolocation_original;
-		
+
+/* A city may contain multiple zip code prefixes, so zip_code_prefix only isn't a candidate key. */ 
 ALTER TABLE geolocation
 	ADD CONSTRAINT PRIMARY KEY (zip_code_prefix, city);
 	
-DROP TABLE geolocation_old;
+DROP TABLE geolocation_original;
 
 
 /* PRODUCT_CATEGORY_NAME_TRANSLATION */
@@ -51,9 +52,13 @@ COPY product_category_name_translation FROM
 /* SELLER */
 CREATE TABLE IF NOT EXISTS seller (
 	id CHAR(32) PRIMARY KEY,
-	zip_code CHAR(5) references geolocation(zip_code),
+	zip_code_prefix CHAR(5),
 	city VARCHAR(50),
-	state CHAR(2)
+	state CHAR(2),
+	
+	CONSTRAINT seller_fk
+		FOREIGN KEY (zip_code_prefix, city)
+			REFERENCES geolocation(zip_code_prefix, city)
 );
 
 COPY seller FROM
@@ -82,41 +87,49 @@ COPY product FROM
 	'C:\Users\KW\Desktop\Programowanie\SQL\Project - Brazilian e-commerce\Data\Main e-commerce data\olist_products_dataset.csv'
 		DELIMITER ','
 			CSV HEADER;
-
-
-/* CUSTOMER */
-CREATE TABLE IF NOT EXISTS customer (
-	customer_order_id CHAR(32) references order(id),
-	id CHAR(32) PRIMARY KEY,
-	zip_code CHAR(5) references geolocation(zip_code),
-	city VARCHAR(50),
-	state CHAR(2)
-);
-
-COPY customer FROM
-	'C:\Users\KW\Desktop\Programowanie\SQL\Project - Brazilian e-commerce\Data\Main e-commerce data\olist_customer_dataset.csv'
-		DELIMITER ','
-			CSV HEADER;
 			
 			
 /* ORDER */
 CREATE TABLE IF NOT EXISTS order (
 	id CHAR(32) PRIMARY KEY,
-	customer_id CHAR(32) NOT NULL,
+	customer_order_id CHAR(32) NOT NULL UNIQUE,
 	status VARCHAR(8) NOT NULL,
 	purchase_timestamp TIMESTAMP,
 	approved_at TIMESTAMP,
 	delivered_carrier_date TIMESTAMP,
 	delivered_customer_date TIMESTAMP,
-	estimated_delivery_date TIMESTAMP,
-	
-	CONSTRAINT customer_order
-		FOREIGN KEY(customer_id)
-			REFERENCES customer(id)
+	estimated_delivery_date TIMESTAMP
 );
 
 COPY order FROM
 	'C:\Users\KW\Desktop\Programowanie\SQL\Project - Brazilian e-commerce\Data\Main e-commerce data\olist_orders_dataset.csv'
+		DELIMITER ','
+			CSV HEADER;
+			
+			
+/* CUSTOMER */
+CREATE TABLE IF NOT EXISTS customer (
+	customer_order_id CHAR(32) references order(customer_order_id),
+	id CHAR(32) PRIMARY KEY,
+	zip_code_prefix CHAR(5),
+	city VARCHAR(50),
+	state CHAR(2),
+	
+	CONSTRAINT customer_geo_fk
+		FOREIGN KEY (zip_code_prefix, city)
+			REFERENCES geolocation(zip_code_prefix, city),
+	CONSTRAINT customer_order_fk
+		/* 
+		While it might be controversial to make order a parent table to customer,
+		it's more relevant for the character of the customer_order_id column -
+		- each customer_order_id is unique to an order and one customer can be related to many customer_order ids.
+		*/
+		FOREIGN KEY (customer_order_id)
+			REFERENCES order(customer_order_id)
+);
+
+COPY customer FROM
+	'C:\Users\KW\Desktop\Programowanie\SQL\Project - Brazilian e-commerce\Data\Main e-commerce data\olist_customer_dataset.csv'
 		DELIMITER ','
 			CSV HEADER;
 
@@ -126,7 +139,7 @@ CREATE TABLE IF NOT EXISTS order_review (
 	id CHAR(32) PRIMARY KEY,
 	order_id CHAR(32) NOT NULL REFERENCES order(id),
 	score SMALLINT NOT NULL,
-	comment_title VARCHAR(100),
+	comment_title VARCHAR(200),
 	comment_message VARCHAR(1000),
 	creation_date TIMESTAMP,
 	answer_timestamp TIMESTAMP,
