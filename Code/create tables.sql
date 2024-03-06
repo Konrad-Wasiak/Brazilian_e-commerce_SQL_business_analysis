@@ -7,24 +7,19 @@ Some constraints might be altered after further examination of the created table
 The list of problems that appeared at this step and are going to be taken care of during the next step -
 - investigating the quality of the data:
 
-1. Geolocation: it appears that there are duplicate values for the zip_code_prefix and city combination only.
-For now, I'm setting the primary key as zip_code_prefix, city, and state.
-
-2. Geolocation: while trying to add a foreign key referencing the geolocation table to the other tables,
+1. Geolocation: while trying to add a foreign key referencing the geolocation table to the other tables,
 it turned out that the table doesn't contain all the necessary locations.
 For now, I'm going to skip this foreign key constraint.
 
-3. Product_category_name_translation: there's no translation for every product category in the product table.
+2. Product_category_name_translation: there's no translation for every product category in the product table.
 Temporarily skipping the foreign key constraint.
 
-4. Customer: duplicate customer_unique_id values. Skipping the primary key constraint for now.
+3. Customer: duplicate customer_unique_id values. Skipping the primary key constraint for now.
 
-5. Order_review: same issue with review_id as above with the customer table.
+4. Order_review: same issue with review_id as above with the customer table.
 
-6. Order_payment: same issue with order_id as above with order_review and customer.
+5. Order_payment: same issue with order_id as above with order_review and customer.
 */
-SELECT * FROM product
-	LIMIT 100;
 BEGIN;
 
 /* GEOLOCATION */
@@ -55,6 +50,9 @@ CREATE TABLE IF NOT EXISTS geolocation AS
 	SELECT DISTINCT geolocation_zip_code_prefix, geolocation_city, geolocation_state
 		FROM geolocation_original;
 
+/*
+"state" is a necessary variable for the primary key because cities from different states can share zip code prefixes.
+*/
 ALTER TABLE geolocation
 	ADD PRIMARY KEY (geolocation_zip_code_prefix, geolocation_city, geolocation_state);
 	
@@ -111,6 +109,17 @@ COPY product FROM
 	'C:\Users\KW\Desktop\Programowanie\SQL\Project - Brazilian e-commerce\Data\Main e-commerce data\Pre-processed data\olist_products_dataset_cleaned.csv'
 		DELIMITER ','
 			CSV HEADER;
+			
+/*
+There was an error while importing data from csv to some columns with the smallint type.
+However, after the data has already been imported,
+there was no problem with altering the data type to the mentioned one.
+*/
+			
+ALTER TABLE product
+	ALTER COLUMN product_name_length TYPE SMALLINT,
+	ALTER COLUMN product_description_length TYPE SMALLINT,
+	ALTER COLUMN product_photos_qty TYPE SMALLINT;
 			
 			
 /* ORDER */
@@ -217,5 +226,4 @@ COPY order_item FROM
 		DELIMITER ','
 			CSV HEADER;
 			
-COMMIT;		
-			
+COMMIT;
