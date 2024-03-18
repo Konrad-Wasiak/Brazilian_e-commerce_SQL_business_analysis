@@ -11,14 +11,14 @@ The list of problems that appeared at this step and are going to be taken care o
 it turned out that the table doesn't contain all the necessary locations.
 For now, I'm going to skip this foreign key constraint.
 
-2. Product_category_name_translation: there's no translation for every product category in the product table.
+2. Customer: duplicate customer_unique_id values. Skipping the primary key constraint for now.
+
+3. Order_review: same issue with review_id as above with the customer table.
+
+4. Order_payment: same issue with order_id as above with order_review and customer.
+
+5. Product_category_name_translation: there's no translation for every product category in the product table.
 Temporarily skipping the foreign key constraint.
-
-3. Customer: duplicate customer_unique_id values. Skipping the primary key constraint for now.
-
-4. Order_review: same issue with review_id as above with the customer table.
-
-5. Order_payment: same issue with order_id as above with order_review and customer.
 */
 BEGIN;
 
